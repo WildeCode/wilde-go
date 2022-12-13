@@ -22,7 +22,7 @@ class Board:
             ['-' for x in range(self.size)] for x in range(self.size)
         ]
         # reminder: 1, 1 in a game will be 0, 0 in self.board
-    
+
     def __str__(self):
         s = ''
         for y in range(self.size):
@@ -31,7 +31,7 @@ class Board:
                 if len(s) % (19 + len('\n')) == 19:
                     s += '\n'
         return s
-    
+
     def makeMove(self, move):
         """Makes move in self.board and changes self.turn
 
@@ -42,7 +42,8 @@ class Board:
             x, y = move
             self.board[x][y] = self.turn
             self.turn = BLACK if self.turn == WHITE else WHITE
-        
+
+
     def moveIsLegal(self, move, color):
         x, y = move
         if self.board[x][y] == EMPTY:
@@ -50,10 +51,10 @@ class Board:
         elif self.board[x][y] == color:
             return False
         return False
-    
+
     def coordToMove(self, coord):
         """Converts coordinates to engine move format.
-        Currently, the schema for the formats is undecided. 
+        Currently, the schema for the formats is undecided.
 
         Args:
             coord (str)): layman form of coordinates (i.e. 'A1')
@@ -63,10 +64,10 @@ class Board:
         """
         x = y = 0
         return (x, y)
-    
+
     def moveToCoord(self, move):
         return False
-    
+
 def testRun():
     moveList = [(0, 0), ()]
     gameBoard = Board()
@@ -78,6 +79,6 @@ def testRun():
     print(gameBoard)
     gameBoard.makeMove((1, 1))
     print(gameBoard)
-    
+
 if __name__ == "__main__":
     testRun()
