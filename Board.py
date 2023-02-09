@@ -1,8 +1,3 @@
-# Wilde-Stone Board class
-# v0.0.1
-# By J. Alexander Long
-# 12-12-2022
-
 BLACK = "X"
 WHITE = "O"
 EMPTY = "-"
@@ -67,18 +62,3 @@ class Board:
 
     def moveToCoord(self, move):
         return False
-
-def testRun():
-    moveList = [(0, 0), ()]
-    gameBoard = Board()
-    gameBoard.makeMove((18, 0))
-    print(gameBoard)
-    gameBoard.makeMove((1, 1))
-    print(gameBoard)
-    gameBoard.makeMove((1, 2))
-    print(gameBoard)
-    gameBoard.makeMove((1, 1))
-    print(gameBoard)
-
-if __name__ == "__main__":
-    testRun()
