@@ -1,13 +1,11 @@
-from Board import *
+import WildeStone as wildeStone
 
-def testRun():
-    moveList = [(0, 0), ()]
-    gameBoard = Board()
-    gameBoard.makeMove((18, 0))
-    gameBoard.makeMove((1, 1))
-    gameBoard.makeMove((1, 2))
-    gameBoard.makeMove((1, 1))
-    print(gameBoard)
-
-if __name__ == "__main__":
-    testRun()
+def testGame():
+    """tests the Game class by making 10 moves."""
+    testGame = wildeStone.Game()
+    for i in range(10):
+        move = testGame.engine.selectMove()
+        testGame.board.makeMove(move)
+        print(testGame.engine.board, '\n'*2)
+        
+testGame()
