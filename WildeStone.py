@@ -24,7 +24,7 @@ EMPTY = "-"
 PASS = (-1, -1)
 
 class Board:
-    def __init__(self, size: int = 19) -> None:
+    def __init__(self, size: int = 19):
         """Initializes a new Board object
 
         Args:
@@ -38,7 +38,7 @@ class Board:
         ]
         # reminder: 1, 1 in a game will be 0, 0 in self.board
 
-    def __str__(self) -> str:
+    def __str__(self):
         s = ''
         for y in range(self.size):
             for x in range(self.size):
@@ -47,19 +47,25 @@ class Board:
                     s += '\n'
         return s
 
-    def makeMove(self, move) -> None:
+    def make_move(self, move) -> bool:
         """Makes move in self.board and changes self.turn
 
         Args:
             move (tuple): Move to be made in self.
+
+        Returns:
+            bool: True if successfully made move in board
+                  False if unsuccessful
         """
-        if self.moveIsLegal(move, self.turn):
+        if self.move_is_legal(move, self.turn):
             x, y = move
             self.board[x][y] = self.turn
             self.turn = BLACK if self.turn == WHITE else WHITE
+            return True
+        else:
+            return False
 
-
-    def moveIsLegal(self, move, color) -> bool:
+    def move_is_legal(self, move, color) -> bool:
         x, y = move
         if self.board[x][y] == EMPTY:
             return True
@@ -67,7 +73,7 @@ class Board:
             return False
         return False
 
-    def coordToMove(self, coord: str) -> tuple:
+    def coord_to_move(self, coord: str) -> tuple:
         """Converts coordinates to engine move format.
         Currently, the schema for the formats is undecided.
 
@@ -80,31 +86,30 @@ class Board:
         x = y = 0
         return (x, y)
 
-    def moveToCoord(self, move: tuple) -> str:
+    def move_to_coord(self, move: tuple) -> str:
         return ''
-    
+
+    def find_neighbors(self, coord):
+        if coord != PASS:
+            pass
 
 class Engine:
     def __init__(self, board: list = Board()) -> None:
         self.board = Board()
     
-    def selectMove(self) -> tuple:
+    def select_move(self) -> tuple:
         x = random.randint(0, self.board.size-1)
         y = random.randint(0, self.board.size-1)
         return (x, y)
         
-    def makeMove(self) -> None:
-        move = self.selectMove()
-        self.board.makeMove(move)
+    def make_engine_move(self) -> tuple:
+        move = self.select_move()
+        self.board.make_move()
+        return move
         
-
-class CLI:
-    def __init__(self):
-        pass
-
         
 class Game:
-    def __init__(self, players: int = 0, size: int = 19) -> None:
+    def __init__(self, players: int = 0, size: int = 19):
         """Start a game of Go with the WildeStone engine
 
         Args:
@@ -115,4 +120,11 @@ class Game:
         """
         self.engine = Engine()
         self.board = self.engine.board
+
+class Group:
+    def __init__(self, stone):
+        self.stone = stone
+        self.group = {}
         
+    def get_all_stones_in_group(self) -> dict:
+        pass
