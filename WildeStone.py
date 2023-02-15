@@ -16,6 +16,7 @@
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import random
+from string import ascii_lowercase
 import sys # for .sgf support
 
 BLACK = "X"
@@ -34,7 +35,7 @@ class Board:
         self.turn = BLACK
         # create an empty board
         self.board = [
-            ['-' for x in range(self.size)] for x in range(self.size)
+            ['-' for x in range(self.size)] for y in range(self.size)
         ]
         # reminder: 1, 1 in a game will be 0, 0 in self.board
 
@@ -74,27 +75,24 @@ class Board:
         return False
 
     def coord_to_move(self, coord: str) -> tuple:
-        """Converts coordinates to engine move format.
-        Currently, the schema for the formats is undecided.
-
-        Args:
-            coord (str)): alphanumerical form of coordinates (i.e. 'A1')
-
-        Returns:
-            tuple: engine move format of layman coordinates (i.e. (0, 0))
-        """
-        x = y = 0
+        x = ascii_lowercase.index(coord[0])
+        y = int(coord[1]) - 1
         return (x, y)
 
     def move_to_coord(self, move: tuple) -> str:
-        return ''
+        return '' # finish this function
 
     def find_neighbors(self, coord):
         if coord != PASS:
-            pass
+            pass # finish this function
+        
+    def remove_stone(self, move: tuple):
+        x, y = move
+        self.board[x][y] = EMPTY
+        
 
 class Engine:
-    def __init__(self, board: list = Board()) -> None:
+    def __init__(self, board: list = Board()):
         self.board = Board()
     
     def select_move(self) -> tuple:
@@ -122,9 +120,40 @@ class Game:
         self.board = self.engine.board
 
 class Group:
-    def __init__(self, stone):
-        self.stone = stone
-        self.group = {}
+    def __init__(self, coord: tuple, board: object):
+        self.board = board
+        x, y = coord
+        self.color = self.board[x][y] # will be BLACK or WHITE
+        self.stones = [coord]
+        self.stones_seen = []
+        self.find_all_stones()
         
-    def get_all_stones_in_group(self) -> dict:
-        pass
+    def find_all_stones(self):
+        """Uses recursion to find all ally stones"""
+        # break recursion if looked at all neighboring stones
+        if self.stones in self.stones_seen:
+            return
+        
+        for stone in self.stones:
+            x, y = stone
+            
+            coord = (x-1, y) # consolidate neighbors into for loop
+            left = self.board[x-1][y] if x != 0 else None
+            if left == self.color:
+                self.stones.append(coord)
+                
+            coord = (x+1, y)
+            right = self.board[x+1][y] if x != self.board.size else None
+            if right == self.color:
+                self.stones.append(coord)
+                
+            coord = (x, y-1)
+            up = self.board[x][y-1] if y != 0 else None
+            if up == self.color:
+                self.stones.append(coord)
+                
+            coord = (x, y+1)
+            down = {coord, self.board[x][y+1]} if y != self.board.size else None
+            if down == self.color:
+                self.stones.append(coord)
+            
