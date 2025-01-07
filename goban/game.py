@@ -1,17 +1,29 @@
 from dataclasses import dataclass
-from enum import IntEnum
-from typing import Tuple
-
+from enum import (
+    Enum,
+    IntEnum,
+)
+from typing import (
+    Optional,
+    Tuple,
+    Union,
+)
 
 
 class Stone(IntEnum):
     BLACK = 0
     WHITE = 1
 
+    def opposite_color(self) -> 'Stone':
+        if self == Stone.BLACK:
+            return Stone.WHITE
+        elif self == Stone.WHITE:
+            return Stone.BLACK
+
 class Point(Tuple[int, int]):
     """
     Represents a point on the Go board.
-    Inherits from tuple for immutability and efficiency.
+    Inherits from typing.Tuple for immutability and efficiency.
     """
     def __new__(cls, row: int, col: int) -> 'Point':
         """
@@ -41,7 +53,7 @@ class Point(Tuple[int, int]):
         Raises:
             ValueError: If the input string is invalid.
         """
-        # The letter 'I' isn't included to avoid confusion with 'J'
+        # The letter 'I' is commonly excluded to avoid confusion with 'J'
         valid_col_letters = "ABCDEFGHJKLMNOPQRST"
         if not coord or len(coord) not in [2, 3]:
             raise ValueError(f"Invalid coordinate format: {coord}")
@@ -51,7 +63,7 @@ class Point(Tuple[int, int]):
             raise ValueError(f"Invalid column letter: {col_letter}")
         col = ord(col_letter) - ord('A') + 1
         # adjust offset to account for missing 'I' in valid_col_letters
-        if col_letter in valid_col_letters[8:]:
+        if col_letter in valid_col_letters[7:]:
             col -= 1
 
         try:
@@ -68,15 +80,11 @@ class Point(Tuple[int, int]):
         Returns:
             String representation of the point in the format "A1", "B3", etc.
         """
-        col_letter = chr(ord('A') + self.col - 1)
+        # adjusts offset to account for missing 'I' in valid_col_letters
+        col_letter = chr(ord('A') + self.col - 1) if self.col <= 8 else chr(ord('A') + self.col)
         return f"{col_letter}{self.row}"
 
 @dataclass
-class Move:
-    turn_number: int
-    point: Point
-    stone: Stone | None
-
 class Group:
     def find_members(self):
         """Uses recursion to find all ally stones
@@ -115,8 +123,22 @@ class Board:
         self.size = size
         # create an empty Board
         self.state = (
-            (None for _ in range(self.size)) for _ in range(self.size)
+            (None for col in range(self.size)) for row in range(self.size)
         )
+
+    def __getitem__(self, point: Point) -> Optional[Stone]:
+        x, y = point
+        if 0 <= x < self.size and 0 <= y < self.size:
+            return self.state[x][y]
+        else:
+            raise IndexError("Index out of bounds")
+
+    def __setitem__(self, point: Point, stone: Stone):
+        x, y = point
+        if 0 <= x < self.size and 0 <= y < self.size:
+            self.state[x][y] = stone
+        else:
+            raise IndexError("Index out of bounds")
 
     def __str__(self):
         s = ""
@@ -130,75 +152,96 @@ class Board:
     def __eq__(self, other):
         for x in range(len(self)):
             for y in range(len(self)):
-                if self.state[x][y] != other.state[x][y]:
+                if self[x][y] != other[x][y]:
                     return False
         return True
 
     def __len__(self):
         return self.size
 
-    def get_stone(self, point: Point):
-        x, y = point
-        stone = self.state[x][y]
-        return stone
+    def __iter__(self):
+        """
+        Returns an iterator over the board's points.
+        """
+        class BoardIterator:
+            def __init__(self, board):
+                self.board = board
+                self.x = 0
+                self.y = 0
 
-    def place_stone(self, coord, color):
-        x, y = coord
-        self.Board[x][y] = color
+            def __next__(self):
+                if self.x >= self.board.size:
+                    raise StopIteration
+                point = (self.x, self.y)
+                self.y += 1
+                if self.y >= self.board.size:
+                    self.y = 0
+                    self.x += 1
+                return point
 
-    def make_move(self, coord) -> bool:
+        return BoardIterator(self)
+
+
+@dataclass
+class Move:
+    turn_number: int
+    point: Point
+    stone: Stone
+
+    def is_legal(self, board: Board) -> bool:
+        return True
+
+
+class PlayerType(IntEnum):
+    PLAYER = 0
+    CPU    = 1
+
+@dataclass
+class Player:
+    name: str
+    type: PlayerType
+    stone: Stone
+
+@ dataclass
+class Game:
+    player1: Player
+    player2: Player
+    turn: Stone = Stone.BLACK
+    komi: float = 6.5
+    board: Board = Board()
+    history: list = []
+
+    def make_move(self, move: Move):
         """Makes move in self.Board, self.history and changes self.turn
 
         Args:
-            coord (tuple): Move to be made in self.
-
-        Returns:
-            bool: True if successfully made move in Board
-                  False if unsuccessful
+            point (Point): Move to be made in self.
         """
-        if self.move_is_legal(coord):
-            self.place_stone(coord, self.turn)
-            self.history.append(coord)
-            self.turn = BLACK if self.turn == WHITE else WHITE
-            return True
-        return False
+        if self.move_is_legal(move, self.board):
+            self.place_stone(move.stone)
+            self.history.append(move)
+            self.turn = self.turn.opposite_color()
+        else:
+            raise ValueError(f"The move {}")
 
     def undo_last_move(self):
         last_move = self.history.pop()
         self.remove_stone(last_move)
-        self.turn = OTHER_SIDE[self.turn]
+        self.turn = self.turn.opposite_color()
 
     def move_is_legal(self, move) -> bool:
-        stone = self.get_stone(move)
-        if stone == EMPTY:
-            return True
-        elif stone == self.turn:
-            return False
-        return False
+        return True
 
-    def coord_string_to_coord_tuple(self, coord_string):
-        # i.e. "C16" -> (3, 15) THIS METHOD DOESN'T WORK YET LOOK AT REAL Board
-        x = LETTERS.index(coord_string[0])
-        y = int(coord_string[:1]) - 1
-        return (x, y)
-
-    def coord_tuple_to_coord_string(self, coord_tuple):
-        # i.e. (3, 15) -> "C16"
-        x, y = coord_tuple
-        x = LETTERS[x]
-        y = y + 1
-        return f"{x}{y}"
-
-    def get_neighbors(self, coord: tuple) -> list:
+    def get_neighbors(self, point: Point) -> list[Stone]:
         """returns list of stones in neighboring squares
 
         Args:
-            coord (tuple): coordinate of point on the Board in question
+            point (Point): coordinate of point on the Board in question
 
         Returns:
             list: [left, right, up, down]
         """
-        x, y = coord
+        x, y = point
         left_stone = self.Board[x-1][y] if x != 0 else None
         right_stone = self.Board[x+1][y] if x != self.size else None
         up_stone = self.Board[x][y-1] if y != 0 else None
@@ -206,11 +249,3 @@ class Board:
 
         neighbors = [left_stone, right_stone, up_stone, down_stone]
         return neighbors
-
-    def remove_stone(self, coord: tuple):
-        x, y = coord
-        self.Board[x][y] = EMPTY
-
-
-class Game:
-    ok = True
