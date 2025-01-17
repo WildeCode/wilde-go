@@ -1,12 +1,10 @@
 from dataclasses import dataclass
 from enum import (
-    Enum,
     IntEnum,
 )
 from typing import (
     Optional,
     Tuple,
-    Union,
 )
 
 
@@ -19,6 +17,7 @@ class Stone(IntEnum):
             return Stone.WHITE
         elif self == Stone.WHITE:
             return Stone.BLACK
+
 
 class Point(Tuple[int, int]):
     """
@@ -39,12 +38,12 @@ class Point(Tuple[int, int]):
         return super().__new__(cls, (row, col))
 
     @classmethod
-    def from_str(cls, coord: str) -> 'Point':
+    def from_str(cls, point_str: str) -> 'Point':
         """
         Creates a Point instance from a string representation.
 
         Args:
-            coord: String representation of the point in the format "A1", "B3", etc. (column letter followed by row number)
+            point_str: String representation of the point in the format "A1", "B3", etc. (column letter followed by row number)
 
         Returns:
             A new Point instance.
@@ -56,21 +55,24 @@ class Point(Tuple[int, int]):
         valid_col_letters = "ABCDEFGHJKLMNOPQRST"
         assert len(valid_col_letters) == 19  # making sure I didn't miss any letters
 
-        if not coord or len(coord) not in [2, 3]:
-            raise ValueError(f"Invalid coordinate format: {coord}\nExpected format \"A1\", \"B13\", etc. (column letter followed by row number)")
-
-        col_letter = coord[0].upper()
+        # input validation
+        if not point_str or len(point_str) not in [2, 3]:
+            raise ValueError(f"Invalid coordinate format: {point_str}\nExpected format \"A1\", \"B13\", etc. (column letter followed by row number)")
+        col_letter = point_str[0].upper()
         if col_letter not in valid_col_letters:
             raise ValueError(f"Invalid column letter: {col_letter}")
+
+        # convert from letter to integer
         col = ord(col_letter) - ord('A') + 1
         # adjust offset to account for missing 'I' in valid_col_letters
         if col_letter in valid_col_letters[7:]:
             col += 1
 
+        # convert
         try:
-            row = int(coord[1:])
+            row = int(point_str[1:])
         except ValueError:
-            raise ValueError(f"Invalid row number: {coord[1:]}")
+            raise ValueError(f"Invalid row number: {point_str[1:]}")
 
         return cls(row, col)
 
@@ -126,10 +128,8 @@ class Board:
         """
         self.size = size
         # create an empty Board
-        self.state = (
-            (None for col in range(self.size)) for row in range(self.size)
-        )
-        print(self.state)
+        self.state: list[list[Optional[Stone]]] = [[None for _ in range(self.size)] for _ in range(self.size)]
+        # print(self.state)  # Uncomment to see the board representation
 
     def __getitem__(self, point: Point) -> Optional[Stone]:
         x, y = point
@@ -138,7 +138,7 @@ class Board:
         else:
             raise IndexError("Index out of bounds")
 
-    def __setitem__(self, point: Point, stone: Stone):
+    def __setitem__(self, point: Point, stone: Optional[Stone]):
         x, y = point
         if 0 <= x < self.size and 0 <= y < self.size:
             self.state[x][y] = stone
@@ -186,7 +186,7 @@ class Board:
 
         return BoardIterator(self)
 
-    def get_neighbors(self, point: Point) -> list[Stone]:
+    def get_neighbors(self, point: Point) -> list[Optional[Stone]]:
         """returns list of stones in neighboring squares
 
         Args:
@@ -195,6 +195,7 @@ class Board:
         Returns:
             list: [left, right, up, down]
         """
+        x, y = point
         left_stone = self[point] if x != 0 else None
         right_stone = self[point] if x != self.size else None
         up_stone = self[point] if y != 0 else None
@@ -202,16 +203,6 @@ class Board:
 
         neighbors = [left_stone, right_stone, up_stone, down_stone]
         return neighbors
-
-
-@dataclass
-class Move:
-    turn_number: int
-    point: Point
-    stone: Stone
-
-    def is_legal(self, board: Board) -> bool:
-        return True
 
 
 class PlayerType(IntEnum):
@@ -222,37 +213,30 @@ class PlayerType(IntEnum):
 class Player:
     name: str
     type: PlayerType
-    stone: Stone
+    stone: Optional[Stone]
 
-class RuleSet:
-    def __init__(self, name='Custom Ruleset', komi=6.5, ):
-        self.name = name
-        self.komi = komi
-
-    def move_is_legal(self, move, board) -> bool:
-        return True
+@dataclass
+class Move:
+    point: Point
+    stone: Optional[Stone]
 
 @ dataclass
 class Game:
     player1: Player
     player2: Player
-    ruleset: RuleSet
     turn: Stone = Stone.BLACK
     board: Board = Board()
     history: list = []
 
     def make_move(self, move: Move):
-        """Makes move in self.Board, self.history and changes self.turn
-
-        Args:
-            point (Point): Move to be made in self.
-        """
-        if self.ruleset.move_is_legal(move, self.board):
-            self.board.place_stone(move.stone)
-            self.history.append(move)
-            self.turn = self.turn.opposite_color()
-        else:
-            raise ValueError(f"The move {move} ")
+        """Makes move in self.Board, self.history and changes self.turn"""
+        row, col = move.point
+        # if self.move_is_legal(move, self.board):
+        self.board[row][col] = move.stone
+        self.history.append(move)
+        self.turn = self.turn.opposite_color()
+        #else:
+        #    raise ValueError(f"The move {move} ")
 
     def undo_last_move(self):
         last_move = self.history.pop()
